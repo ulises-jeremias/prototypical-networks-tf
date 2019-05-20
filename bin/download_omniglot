@@ -2,8 +2,6 @@
 
 . scripts/flags/declares.sh
 
-variables["-u"]="username"
-variables["-t"]="token"
 variables["-d"]="DATADIR"
 
 . scripts/flags/arguments.sh
