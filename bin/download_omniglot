@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-. scripts/flags/declares.sh
+. bin/scripts/flags/declares.sh
 
 variables["-d"]="DATADIR"
 
-. scripts/flags/arguments.sh
+. bin/scripts/flags/arguments.sh
 
 DATADIR=${DATADIR:-"data/omniglot/data"}
 

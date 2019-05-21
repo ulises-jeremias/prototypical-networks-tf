@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-. scripts/flags/declares.sh
+. bin/scripts/flags/declares.sh
 
 variables["-t"]="tag"
 variables["-n"]="name"
 
-. scripts/flags/arguments.sh
+. bin/scripts/flags/arguments.sh
 
 tag=${tag:-"cpu"}
 name=${name:-"prototypical-networks"}
@@ -14,4 +14,4 @@ echo "Creating $name container with tag $tag"
 echo $PWD
 
 docker build --build-arg DOCKER_ENV=$tag --rm -f dockerfiles/tf-py3-jupyter.Dockerfile -t $name:$tag . && \
-docker run -v $PWD/notebooks:/tf/notebooks --rm -u $(id -u):$(id -g) -p 6006:6006 -p 8888:8888 $name:$tag
+docker run -v $PWD/results:/tf/results -v $PWD/protonet:/tf/protonet --rm -u $(id -u):$(id -g) -p 6006:6006 -p 8888:8888 $name:$tag
