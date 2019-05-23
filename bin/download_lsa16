@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+import handshape_datasets as hd
+
+DATASET_NAME = "lsa16"
+DATASET_OUTPUT_PATH = "/develop/data/lsa16/data"
+
+ciarp = hd.load(DATASET_NAME, DATASET_OUTPUT_PATH)
