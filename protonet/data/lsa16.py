@@ -85,7 +85,7 @@ def load_lsa16(data_dir, config, splits):
 
         for i_class in range(len(classes)):
             for i_img in range(len(features[i_class])):
-                data[i_class, i_img, :, :, :] = features[i_class][i_img]
+                # data[i_class, i_img, :, :, :] = ????????
 
         data /= 255.0
         data[:, :, :, 0] = (data[:, :, :, 0] - 0.485) / 0.229
