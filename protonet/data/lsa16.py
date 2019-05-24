@@ -4,7 +4,6 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import handshape_datasets as hd
-from PIL import Image
 
 
 class DataLoader(object):
@@ -17,8 +16,8 @@ class DataLoader(object):
 
     def get_next_episode(self):
         n_examples = 20
-        support = np.zeros([self.n_way, self.n_support, 28, 28, 3], dtype=np.float32)
-        query = np.zeros([self.n_way, self.n_query, 28, 28, 3], dtype=np.float32)
+        support = np.zeros([self.n_way, self.n_support, 32, 32, 3], dtype=np.float32)
+        query = np.zeros([self.n_way, self.n_query, 32, 32, 3], dtype=np.float32)
         classes_ep = np.random.permutation(self.n_classes)[:self.n_way]
 
         for i, i_class in enumerate(classes_ep):
@@ -42,24 +41,24 @@ def load_lsa16(data_dir, config, splits):
     """
 
     DATASET_NAME = "lsa16"
-    DATASET_OUTPUT_PATH = "/develop/data/lsa16/data"
+    DATASET_PATH = "/develop/data/lsa16/data"
 
-    loadedData = hd.load(DATASET_NAME, DATASET_OUTPUT_PATH)
+    loadedData = hd.load(DATASET_NAME, DATASET_PATH)
 
     features = loadedData[0]
     classes = loadedData[1]['y']
+    uniqueClasses, imgsPerClass = np.unique(classes, return_counts=True)
 
     x_train, x_test, y_train, y_test = train_test_split(features,
                                                         classes,
-                                                        test_size=0.33,
-                                                        random_state=42)
+                                                        test_size=0.3,
+                                                        random_state=0,
+                                                        stratify=classes)
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
-    train_ds = tf.data.Dataset.from_tensor_slices(
-        (x_train, y_train)).shuffle(10000).batch(32)
-    test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(32)
+    trainClasses, amountPerTrain = np.unique(y_train, return_counts=True)
+    testClasses, amountPerTest = np.unique(y_test, return_counts=True)
 
-    split_dir = os.path.join(data_dir, 'splits', config['data.split'])
     ret = {}
     for split in splits:
         # n_way (number of classes per episode)
@@ -80,20 +79,21 @@ def load_lsa16(data_dir, config, splits):
         else:
             n_query = config['data.train_query']
 
-        # Convert original data to format [n_classes, n_img, w, h, c]
-        data = np.zeros((len(classes), len(features[0]), 28, 28, 3))
+        if split in ['val', 'test']:
+            y = y_test
+            x = x_test
+        else:
+            y = y_train
+            x = x_train
 
-        for i_class in range(len(classes)):
-            for i_img in range(len(features[i_class])):
-                # data[i_class, i_img, :, :, :] = ????????
+        amountPerClass = amountPerTest if split in ['val', 'test'] else amountPerTrain
 
-        data /= 255.0
-        data[:, :, :, 0] = (data[:, :, :, 0] - 0.485) / 0.229
-        data[:, :, :, 1] = (data[:, :, :, 1] - 0.456) / 0.224
-        data[:, :, :, 2] = (data[:, :, :, 2] - 0.406) / 0.225
+        i = np.argsort(y)
+        x = x[i, :, :, :]
+        data = np.reshape(x, (len(uniqueClasses), amountPerClass[0], 32, 32, 3))
 
         data_loader = DataLoader(data,
-                                 n_classes=len(classes),
+                                 n_classes=len(uniqueClasses),
                                  n_way=n_way,
                                  n_support=n_support,
                                  n_query=n_query)
