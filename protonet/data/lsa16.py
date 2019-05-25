@@ -51,7 +51,7 @@ def load_lsa16(data_dir, config, splits):
 
     x_train, x_test, y_train, y_test = train_test_split(features,
                                                         classes,
-                                                        test_size=0.3,
+                                                        test_size=0.5,
                                                         random_state=0,
                                                         stratify=classes)
     x_train, x_test = x_train / 255.0, x_test / 255.0
