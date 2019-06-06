@@ -1,5 +1,4 @@
 from .omniglot import load_omniglot
-from .cifar10 import load_cifar10
 from .lsa16 import load_lsa16
 
 def load(data_dir, config, splits):
@@ -17,8 +16,6 @@ def load(data_dir, config, splits):
     """
     if config['data.dataset'] == "omniglot":
         ds = load_omniglot(data_dir, config, splits)
-    elif config['data.dataset'] == "cifar10":
-        ds = load_cifar10(data_dir, config, splits)
     elif config['data.dataset'] == "lsa16":
         ds = load_lsa16(data_dir, config, splits)
     else:

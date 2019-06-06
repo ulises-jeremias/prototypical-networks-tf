@@ -5,25 +5,46 @@ accomplished during training (metrics monitor, model saving etc.)
 
 import os
 import time
+from datetime import datetime
 import numpy as np
 import tensorflow as tf
-tf.config.gpu.set_per_process_memory_growth(True)
+
+# tf.config.gpu.set_per_process_memory_growth(True)
+# tf.debugging.set_log_device_placement(True)
 
 from protonet.models import Prototypical
 from protonet.data import load
 from protonet import TrainEngine
 
-
 def train(config):
     np.random.seed(2019)
     tf.random.set_seed(2019)
 
+    model_type = config['model.type']
+    now = datetime.now()
+    now_as_str = now.strftime('%Y_%m_%d-%H:%M:%S')
+
+    data_dir = f"data/{config['data.dataset']}"
+    csv_output_file = f"{config['data.dataset']}_{config['model.type']}_{now_as_str}.csv"
+    summary_output_file = f"{config['data.dataset']}_{config['model.type']}_{now_as_str}"
+
     # Create folder for model
-    model_dir = config['model.save_path'][:config['model.save_path'].rfind('/')]
+    model_dir = config['model.save_path'].format(model_type)[:config['model.save_path'].format(model_type).rfind('/')]
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 
-    data_dir = f"data/{config['data.dataset']}"
+    # Create output for train process
+    results_dir = config['output.train_path']
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    file = open(f'{results_dir}/{csv_output_file}', 'w') 
+    file.write("epoch, loss, accuracy, val_loss, val_accuracy\n") 
+    file.close()
+
+    train_summary_writer = tf.summary.create_file_writer(f"{config['summary.save_path']}/train/{summary_output_file}")
+    val_summary_writer = tf.summary.create_file_writer(f"{config['summary.save_path']}/test/{summary_output_file}")
+
     ret = load(data_dir, config, ['train', 'val'])
     train_loader = ret['train']
     val_loader = ret['val']
@@ -98,16 +119,26 @@ def train(config):
         epoch = state['epoch']
         template = 'Epoch {}, Loss: {}, Accuracy: {}, ' \
                    'Val Loss: {}, Val Accuracy: {}'
-        print(
-            template.format(epoch + 1, train_loss.result(), train_acc.result() * 100,
-                            val_loss.result(),
-                            val_acc.result() * 100))
+
+        file = open(f'{results_dir}/{csv_output_file}', 'a+') 
+        file.write("{}, {}, {}, {}, {}\n".format(epoch + 1,
+                                                 train_loss.result(),
+                                                 train_acc.result() * 100,
+                                                 val_loss.result(),
+                                                 val_acc.result() * 100)) 
+        file.close()
+
+        print(template.format(epoch + 1,
+                              train_loss.result(),
+                              train_acc.result() * 100,
+                              val_loss.result(),
+                              val_acc.result() * 100))
 
         cur_loss = val_loss.result().numpy()
         if cur_loss < state['best_val_loss']:
-            print("Saving new best model with loss: ", cur_loss)
+            print("Saving new best model with loss: {}".format(cur_loss))
             state['best_val_loss'] = cur_loss
-            model.save(config['model.save_path'])
+            model.save(config['model.save_path'].format(model_type))
         val_losses.append(cur_loss)
 
         # Early stopping
@@ -115,6 +146,19 @@ def train(config):
         if len(val_losses) > patience \
                 and max(val_losses[-patience:]) == val_losses[-1]:
             state['early_stopping_triggered'] = True
+
+        with train_summary_writer.as_default():
+            tf.summary.scalar('loss', train_loss.result(), step=epoch)
+            tf.summary.scalar('accuracy', train_acc.result(), step=epoch)
+            train_loss.reset_states()           
+            train_acc.reset_states()        
+
+        with val_summary_writer.as_default():
+            tf.summary.scalar('loss', val_loss.result(), step=epoch)
+            tf.summary.scalar('accuracy', val_acc.result(), step=epoch)
+            val_loss.reset_states()          
+            val_acc.reset_states()
+
     train_engine.hooks['on_end_epoch'] = on_end_epoch
 
     def on_start_episode(state):
@@ -135,6 +179,7 @@ def train(config):
     train_engine.hooks['on_end_episode'] = on_end_episode
 
     time_start = time.time()
+
     with tf.device(device_name):
         train_engine.train(
             loss_func=loss,
@@ -142,9 +187,11 @@ def train(config):
             val_loader=val_loader,
             epochs=config['train.epochs'],
             n_episodes=config['data.episodes'])
+
     time_end = time.time()
 
     elapsed = time_end - time_start
     h, min = elapsed//3600, elapsed%3600//60
     sec = elapsed-min*60
+
     print(f"Training took: {h} h {min} min {sec} sec")

@@ -25,7 +25,7 @@ def preprocess_config(c):
 
 
 parser = argparse.ArgumentParser(description='Run evaluation')
-parser.add_argument("--config", type=str, default="./scripts/config_omniglot.conf",
+parser.add_argument("--config", type=str, default="./scripts/config_lsa16.conf",
                     help="Path to the config file.")
 
 # Run training
