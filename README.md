@@ -15,18 +15,38 @@ The repository organized as follows.
 
 Training and evaluation configurations are specified through config files, each config describes single train+eval evnironment.
 
-Run the following command to run training on Omniglot with default parameters.
+Run the following command to run training on `<config>` with default parameters.
 
 ```sh
-$ python scripts/train/run_train.py --config scripts/config_omniglot.conf 
+$ ./bin/protonet --mode train --config <config>
 ```
 
-## Evaluating
+`<config> = omniglot | lsa16`
 
-To run evaluation on Omniglot
+#### Evaluating
+
+To run evaluation on a specific dataset
 
 ```sh
-$ python scripts/eval/run_eval.py --config scripts/config_omniglot.conf
+$ ./bin/protonet --mode eval --config <config>
+```
+
+`<config> = omniglot | lsa16`
+
+#### Results
+
+In the `results/<ds>` directory you can find the following results of training processes on a specific dataset `<ds>`:
+
+-  `results/<ds>/models/`, there are trained models.
+
+-  `results/<ds>/results/`, there are debug output on different `.csv` files.
+
+-  `results/<ds>/summaries/`, tensorboard summaries.
+
+To run TensorBoard, use the following command 
+
+```sh
+$ tensorboard --logdir=./results/<ds>/summaries/
 ```
 
 # Environment
@@ -34,7 +54,12 @@ $ python scripts/eval/run_eval.py --config scripts/config_omniglot.conf
 ## Quickstart
 
 ```sh
-$ ./bin/start
+$ ./bin/start [-t <tag-name>] -[-sudo <bool>] [--use-official <bool>]
+```
+
+```
+<tag-name> = cpu | devel-cpu | gpu | nightly-gpu-py3
+<bool> = false | true
 ```
 
 ## Setup and use docker
@@ -57,4 +82,16 @@ If you want, you can attach a shell to the running container
 
 ```sh
 $ docker exec -it <container-id> /bin/sh -c "[ -e /bin/bash ] && /bin/bash || /bin/sh"
+```
+
+And then you can find the entire source code in `/develop`.
+
+```sh
+$ cd /develop
+```
+
+To run TensorBoard, use the following command (alternatively python -m tensorboard.main)
+
+```sh
+$ tensorboard --logdir=/path/to/summaries
 ```

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+. bin/scripts/flags/declares.sh
+
+variables["--mode"]="mode"
+variables["--config"]="config"
+
+. bin/scripts/flags/arguments.sh
+
+mode=${mode:-"train"}
+config=${config:-"lsa16"}
+
+echo "Running $mode mode with $config configuration file"
+
+python protonet-tf/scripts/$mode/run_$mode.py --config protonet-tf/scripts/config_$config.conf

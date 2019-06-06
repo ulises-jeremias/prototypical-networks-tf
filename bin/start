@@ -4,14 +4,41 @@
 
 variables["-t"]="tag"
 variables["-n"]="name"
+variables["--sudo"]="sudo"
+variables["--use-official"]="use_official"
 
 . bin/scripts/flags/arguments.sh
 
 tag=${tag:-"cpu"}
-name=${name:-"prototypical-networks"}
+name=${name:-"protonet"}
+sudo=${sudo:-"false"}
+use_official=${use_official:-"false"}
 
 echo "Creating $name container with tag $tag"
 echo $PWD
 
-docker build --build-arg DOCKER_ENV=$tag --rm -f dockerfiles/tf-py3-jupyter.Dockerfile -t $name:$tag . && \
-docker run -v $PWD/results:/tf/results -v $PWD/protonet:/tf/protonet --rm -u $(id -u):$(id -g) -p 6006:6006 -p 8888:8888 $name:$tag
+u_flag=""
+dockerfile=tf-py3-jupyter
+runtime=""
+
+if [[ $sudo == "false" ]]
+then
+    u_flag="-u $(id -u):$(id -g)"
+fi
+
+if [[ $use_official == "true" ]]
+then
+    dockerfile=tf-official-py3-jupyter
+fi
+
+if [[ $tag == "gpu" || $use_official == "true" ]]
+then
+    runtime="--runtime=nvidia"
+fi
+
+echo "user flag: ${u_flag:-"-"}"
+echo "dockerfile: $dockerfile"
+echo "runtime: ${runtime:-"-"}"
+
+docker build --build-arg DOCKER_ENV=$tag --rm -f dockerfiles/$dockerfile.Dockerfile -t $name:$tag . && \
+docker run -v $PWD:/develop -v $PWD/results:/tf/results --rm $u_flag -p 6006:6006 -p 8888:8888 $runtime $name:$tag
