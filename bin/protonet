@@ -8,7 +8,7 @@ variables["--config"]="config"
 . bin/scripts/flags/arguments.sh
 
 mode=${mode:-"train"}
-config=${config:-"lsa16"}
+config=${config:-"omniglot"}
 
 echo "Running $mode mode with $config configuration file"
 

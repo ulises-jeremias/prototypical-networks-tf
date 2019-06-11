@@ -21,7 +21,7 @@ Run the following command to run training on `<config>` with default parameters.
 $ ./bin/protonet --mode train --config <config>
 ```
 
-`<config> = omniglot | lsa16`
+`<config> = omniglot | ...`
 
 #### Evaluating
 
@@ -31,7 +31,7 @@ To run evaluation on a specific dataset
 $ ./bin/protonet --mode eval --config <config>
 ```
 
-`<config> = omniglot | lsa16`
+`<config> = omniglot | ...`
 
 #### Results
 
