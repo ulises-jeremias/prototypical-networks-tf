@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Flatten, Conv2D
+from tensorflow.keras.layers import Dense, Flatten, Conv2D, BatchNormalization, ReLU, MaxPool2D
 from tensorflow.keras import Model
 from tensorflow.keras.models import load_model
 
@@ -22,45 +22,39 @@ def calc_euclidian_dists(x, y):
     y = tf.tile(tf.expand_dims(y, 0), [n, 1, 1])
     return tf.reduce_mean(tf.math.pow(x - y, 2), 2)
 
-
 class Prototypical(Model):
     """
     Implemenation of Prototypical Network.
     """
-    def __init__(self, n_support, n_query, w, h, c):
+    def __init__(self, n_support, n_query, w, h, c, nb_layers=4, nb_filters=64):
         """
         Args:
             n_support (int): number of support examples.
             n_query (int): number of query examples.
-            w (int): image width .
+            w (int): image width.
             h (int): image height.
             c (int): number of channels.
         """
         super(Prototypical, self).__init__()
-        self.w, self.h, self.c = w, h, c
+        self.w, self.h, self.c, self.nb_filters,self.nb_layers = w, h, c, nb_filters, nb_layers
 
-        # Encoder as ResNet like CNN with 4 blocks
-        self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding='same'),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.ReLU(),
-            tf.keras.layers.MaxPool2D((2, 2)),
+        layers = []
 
-            tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding='same'),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.ReLU(),
-            tf.keras.layers.MaxPool2D((2, 2)),
+        for i in range(nb_layers):
+            layers += self.conv_block()
 
-            tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding='same'),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.ReLU(),
-            tf.keras.layers.MaxPool2D((2, 2)),
+        layers.append(Flatten())
 
-            tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding='same'),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.ReLU(),
-            tf.keras.layers.MaxPool2D((2, 2)), Flatten()]
-        )
+        # Encoder as ResNet like CNN with nb_layers blocks
+        self.encoder = tf.keras.Sequential(layers)
+
+    def conv_block(self, kernel_size=3, padding='same'):
+        return [
+            Conv2D(filters=self.nb_filters, kernel_size=kernel_size, padding=padding),
+            BatchNormalization(),
+            ReLU(),
+            MaxPool2D((2, 2))
+        ]
 
     def call(self, support, query):
         n_class = support.shape[0]
@@ -100,6 +94,7 @@ class Prototypical(Model):
             tf.cast(tf.argmax(log_p_y, axis=-1), tf.int32), 
             tf.cast(y, tf.int32)), tf.float32)
         acc = tf.reduce_mean(eq)
+
         return loss, acc
 
     def save(self, model_path):

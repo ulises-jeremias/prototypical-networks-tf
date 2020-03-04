@@ -1,28 +1,31 @@
 ARG DOCKER_ENV=cpu
 
 FROM ulisesjeremias/tf-docker:${DOCKER_ENV}-jupyter
+# DOCKER_ENV are specified again because the FROM directive resets ARGs
+# (but their default value is retained if set previously)
+
+ARG DOCKER_ENV
 
 ADD . /develop
 
-RUN apt-get update -q
-RUN apt-get install -y git wget nano
+# Needed for string testing
+SHELL ["/bin/bash", "-c"]
 
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update -q && \
+    apt-get install -y libsm6 libxext6 libxrender-dev && \
+    apt-get install -y git nano graphviz && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN python3 --version
-
-WORKDIR /develop
-
-RUN bin/download_omniglot -d /develop/data/omniglot/data
-RUN python3 setup.py install
-
-RUN git clone --branch=develop https://github.com/midusi/handshape_datasets.git /develop/lib/handshape_datasets
-RUN pip3 install -e /develop/lib/handshape_datasets
-
-RUN mkdir -p /.handshape_datasets
-RUN chmod -R a+rwx /.handshape_datasets
-
-RUN chmod -R a+rwx /develop
+# Install models, scripts, protonet scripts and handshape-recognition utils
+# Clone and install protonet
+# Clone and install handshape datasets
+RUN pip install --upgrade pip && \
+    pip3 install -e /develop && \
+    pip3 install densenet && \
+    pip3 install -U tensorflow && \
+    pip3 install tensorflow_datasets && \
+    pip3 install seaborn eli5 shap pydot pdpbox sklearn opencv-python IPython && \
+    if [[ "$DOCKER_ENV" = "gpu" ]]; then echo -e "\e[1;31mINSTALLING GPU SUPPORT\e[0;33m"; pip3 install -U tf-nightly-gpu-2.0-preview tb-nightly; fi
 
 WORKDIR /develop
