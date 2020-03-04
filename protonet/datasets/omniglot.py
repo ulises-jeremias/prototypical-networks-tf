@@ -4,7 +4,6 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 
-
 class DataLoader(object):
     def __init__(self, data, n_classes, n_way, n_support, n_query):
         self.data = data

@@ -22,7 +22,6 @@ def calc_euclidian_dists(x, y):
     y = tf.tile(tf.expand_dims(y, 0), [n, 1, 1])
     return tf.reduce_mean(tf.math.pow(x - y, 2), 2)
 
-
 class Prototypical(Model):
     """
     Implemenation of Prototypical Network.
@@ -32,7 +31,7 @@ class Prototypical(Model):
         Args:
             n_support (int): number of support examples.
             n_query (int): number of query examples.
-            w (int): image width .
+            w (int): image width.
             h (int): image height.
             c (int): number of channels.
         """
