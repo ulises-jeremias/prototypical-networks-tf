@@ -26,7 +26,7 @@ class Prototypical(Model):
     """
     Implemenation of Prototypical Network.
     """
-    def __init__(self, n_support, n_query, w, h, c, nb_layers=4, nb_filters=64):
+    def __init__(self, n_support, n_query, w, h, c, nb_layers=4, nb_filters=64, base_model=None):
         """
         Args:
             n_support (int): number of support examples.
@@ -36,21 +36,23 @@ class Prototypical(Model):
             c (int): number of channels.
         """
         super(Prototypical, self).__init__()
-        self.w, self.h, self.c, self.nb_filters,self.nb_layers = w, h, c, nb_filters, nb_layers
+        self.w, self.h, self.c = w, h, c
 
         layers = []
+        if base_model != None:
+            layers.append(base_model)
 
         for i in range(nb_layers):
-            layers += self.conv_block()
+            layers += self.conv_block(nb_filters=nb_filters)
 
         layers.append(Flatten())
 
         # Encoder as ResNet like CNN with nb_layers blocks
         self.encoder = tf.keras.Sequential(layers)
 
-    def conv_block(self, kernel_size=3, padding='same'):
+    def conv_block(self, kernel_size=3, padding='same', nb_filters=None):
         return [
-            Conv2D(filters=self.nb_filters, kernel_size=kernel_size, padding=padding),
+            Conv2D(filters=nb_filters, kernel_size=kernel_size, padding=padding),
             BatchNormalization(),
             ReLU(),
             MaxPool2D((2, 2))
